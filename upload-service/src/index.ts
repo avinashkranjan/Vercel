@@ -6,15 +6,15 @@ import morgan from "morgan";
 import { getAllFiles } from "./file";
 import path from "path";
 import { uploadFile } from "./aws";
-// import { createClient } from "redis";
+import { createClient } from "redis";
 import * as dotenv from "dotenv";
 import { generate } from "./util/uniqueIdGen";
 
-// const publisher = createClient();
-// publisher.connect();
+const publisher = createClient();
+publisher.connect();
 
-// const subscriber = createClient();
-// subscriber.connect();
+const subscriber = createClient();
+subscriber.connect();
 
 const app = express();
 
@@ -41,23 +41,22 @@ app.post("/deploy", async (req, res) => {
     await uploadFile(file.slice(__dirname.length + 1), file);
   });
 
-  // await new Promise((resolve) => setTimeout(resolve, 5000));
-  // publisher.lPush("build-queue", id);
-  // // INSERT => SQL
-  // // .create =>
-  // publisher.hSet("status", id, "uploaded");
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  publisher.lPush("build-queue", id);
+
+  publisher.hSet("status", id, "uploaded");
 
   res.status(200).json({
     id: id,
   });
 });
 
-// app.get("/status", async (req, res) => {
-//   const id = req.query.id;
-//   const response = await subscriber.hGet("status", id as string);
-//   res.json({
-//     status: response,
-//   });
-// });
+app.get("/status", async (req, res) => {
+  const id = req.query.id;
+  const response = await subscriber.hGet("status", id as string);
+  res.json({
+    status: response,
+  });
+});
 
 app.listen(3000);
